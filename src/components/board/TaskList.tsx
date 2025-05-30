@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Droppable } from "react-beautiful-dnd";
 import { useBoard } from "@/context/BoardContext";
 import { TaskList as TaskListType } from "@/types";
 import { TaskCard } from "./TaskCard";
@@ -53,11 +54,27 @@ export function TaskList({ list, boardId, cards }: TaskListProps) {
           </span>
         </div>
         
-        <div className="min-h-[10px]">
-          {cards.map((card) => (
-            <TaskCard key={card.id} card={card} boardId={boardId} />
-          ))}
-        </div>
+        <Droppable droppableId={list.id}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`min-h-[100px] transition-colors ${
+                snapshot.isDraggingOver ? 'bg-muted/50' : ''
+              }`}
+            >
+              {cards.map((card, index) => (
+                <TaskCard 
+                  key={card.id} 
+                  card={card} 
+                  boardId={boardId}
+                  index={index}
+                />
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
         
         {isAddingCard ? (
           <div className="mt-2">

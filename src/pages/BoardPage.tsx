@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { useBoard } from "@/context/BoardContext";
 import { Layout } from "@/components/layout/Layout";
 import { TaskList } from "@/components/board/TaskList";
@@ -9,7 +10,7 @@ import { MemberList } from "@/components/board/MemberList";
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
-  const { boards, currentBoard, setCurrentBoard } = useBoard();
+  const { boards, currentBoard, setCurrentBoard, moveCard } = useBoard();
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -40,6 +41,23 @@ export default function BoardPage() {
   const getCardsForList = (listId: string) => {
     return currentBoard.cards.filter(card => card.listId === listId);
   };
+
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    moveCard(draggableId, source.droppableId, destination.droppableId);
+  };
   
   return (
     <Layout>
@@ -48,16 +66,18 @@ export default function BoardPage() {
         
         <MemberList members={currentBoard.members} />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {currentBoard.lists.sort((a, b) => a.order - b.order).map((list) => (
-            <TaskList 
-              key={list.id}
-              list={list}
-              boardId={currentBoard.id}
-              cards={getCardsForList(list.id)}
-            />
-          ))}
-        </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {currentBoard.lists.sort((a, b) => a.order - b.order).map((list) => (
+              <TaskList 
+                key={list.id}
+                list={list}
+                boardId={currentBoard.id}
+                cards={getCardsForList(list.id)}
+              />
+            ))}
+          </div>
+        </DragDropContext>
       </div>
     </Layout>
   );

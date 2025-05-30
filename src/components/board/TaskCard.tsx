@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Draggable } from "react-beautiful-dnd";
 import { useBoard } from "@/context/BoardContext";
 import { TaskCard as TaskCardType, Activity } from "@/types";
 import { 
@@ -34,9 +35,10 @@ import { format } from "date-fns";
 interface TaskCardProps {
   card: TaskCardType;
   boardId: string;
+  index: number;
 }
 
-export function TaskCard({ card, boardId }: TaskCardProps) {
+export function TaskCard({ card, boardId, index }: TaskCardProps) {
   const { completeActivity, addActivityToCard, addCommentToCard, closeCard, currentBoard } = useBoard();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newActivity, setNewActivity] = useState("");
@@ -79,69 +81,78 @@ export function TaskCard({ card, boardId }: TaskCardProps) {
 
   return (
     <>
-      <div 
-        className="task-card bg-card rounded-md p-3 mb-2 border border-border shadow-sm"
-        onClick={() => setIsDialogOpen(true)}
-      >
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium text-card-foreground">{card.title}</h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isDoneList && (
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseCard();
-                  }}
-                >
-                  Close Card
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        {card.description && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{card.description}</p>
-        )}
-        
-        {totalActivities > 0 && (
-          <div className="flex items-center text-xs text-muted-foreground mb-2">
-            <CheckSquare className="h-3 w-3 mr-1" />
-            <span>
-              {completedActivities}/{totalActivities} ({completionPercentage}%)
-            </span>
-          </div>
-        )}
-        
-        <div className="flex justify-between items-center mt-3">
-          <div className="flex space-x-2">
-            {card.comments.length > 0 && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <MessageSquare className="h-3 w-3 mr-1" />
-                <span>{card.comments.length}</span>
+      <Draggable draggableId={card.id} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            className={`task-card bg-card rounded-md p-3 mb-2 border border-border shadow-sm cursor-pointer transition-transform ${
+              snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
+            }`}
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium text-card-foreground">{card.title}</h3>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isDoneList && (
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCloseCard();
+                      }}
+                    >
+                      Close Card
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            {card.description && (
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{card.description}</p>
+            )}
+            
+            {totalActivities > 0 && (
+              <div className="flex items-center text-xs text-muted-foreground mb-2">
+                <CheckSquare className="h-3 w-3 mr-1" />
+                <span>
+                  {completedActivities}/{totalActivities} ({completionPercentage}%)
+                </span>
               </div>
             )}
             
-            {card.attachments.length > 0 && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <PaperclipIcon className="h-3 w-3 mr-1" />
-                <span>{card.attachments.length}</span>
+            <div className="flex justify-between items-center mt-3">
+              <div className="flex space-x-2">
+                {card.comments.length > 0 && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    <span>{card.comments.length}</span>
+                  </div>
+                )}
+                
+                {card.attachments.length > 0 && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <PaperclipIcon className="h-3 w-3 mr-1" />
+                    <span>{card.attachments.length}</span>
+                  </div>
+                )}
               </div>
-            )}
+              
+              <div className="text-xs text-muted-foreground">
+                {format(new Date(card.createdAt), 'MMM d')}
+              </div>
+            </div>
           </div>
-          
-          <div className="text-xs text-muted-foreground">
-            {format(new Date(card.createdAt), 'MMM d')}
-          </div>
-        </div>
-      </div>
+        )}
+      </Draggable>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
